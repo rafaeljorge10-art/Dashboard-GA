@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Estratégico - Grupo de Assistência</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                            darkBg: '#0b0f19',
+                            cardBg: '#131c2e',
+                            cardBorder: '#1e293b',
+                            accentGold: '#f59e0b',
+                            accentTeal: '#10b981',
+                            accentBlue: '#3b82f6',
+                            accentCoral: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js and DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .select-dark {
+            background-color: #1a2336;
+            border: 1px solid #2d3748;
+            color: #e2e8f0;
+        }
+        .select-dark:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sort-header:hover {
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- TOP HEADER -->
+    <header class="border-b border-slate-800 bg-[#0f172a] px-6 py-5 sticky top-0 z-50 shadow-xl backdrop-blur-md bg-opacity-95">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <p class="text-xs uppercase tracking-widest font-semibold text-amber-500 mb-0.5">PAINEL ESTRATÉGICO DE INTELIGÊNCIA INTERATIVO</p>
+                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-blue-400"></i> Grupo de Assistência
+                </h1>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    <span id="filtered-count-badge" class="font-semibold text-sky-400">51</span> pessoas no recorte atual · Clique nos gráficos ou tabela para filtrar
+                </p>
+            </div>
+            
+            <!-- Global Search & Actions -->
+            <div class="flex items-center gap-3">
+                <div class="relative w-full md:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por nome..." 
+                           class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg select-dark placeholder-slate-500 focus:ring-1 focus:ring-blue-500 transition">
+                </div>
+                <button id="reset-btn" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-rotate-left text-slate-400"></i> Limpar Filtros
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
+
+        <!-- FILTERS BAR -->
+        <section class="bg-[#131c2e] p-4 rounded-xl border border-slate-800 shadow-md">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Categoria</label>
+                    <select id="filter-categoria" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Situação</label>
+                    <select id="filter-situacao" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Frequenta</label>
+                    <select id="filter-frequenta" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Tem Função?</label>
+                    <select id="filter-funcao" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todos</option>
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Batizado?</label>
+                    <select id="filter-batizado" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todos</option>
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Último Seminário</label>
+                    <select id="filter-seminario" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todos</option>
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="Antes de 2022">Antes de 2022</option>
+                        <option value="Sem Registro">Sem Registro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Tempo s/ Visita</label>
+                    <select id="filter-semvisita" class="w-full text-xs p-2 rounded-lg select-dark">
+                        <option value="Todos">Todos</option>
+                        <option value="Até 1 ano">Até 1 ano (&lt; 365d)</option>
+                        <option value="1 a 3 anos">1 a 3 anos</option>
+                        <option value="3 a 5 anos">3 a 5 anos</option>
+                        <option value="Mais de 5 anos">Mais de 5 anos (&gt; 5a)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active Interactive Filter Indicator Banner -->
+            <div id="active-filter-banner" class="hidden mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-400 font-medium"><i class="fa-solid fa-filter"></i> Filtro Ativo via Gráfico:</span>
+                    <span id="active-filter-text" class="bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-md border border-amber-500/20 font-semibold"></span>
+                </div>
+                <button id="clear-chart-filter-btn" class="text-slate-400 hover:text-white underline text-xs">Remover filtro de gráfico</button>
+            </div>
+        </section>
+
+        <!-- KPI METRICS SUMMARY -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-[#131c2e] p-4 rounded-xl border border-slate-800 relative overflow-hidden shadow-sm hover:border-slate-700 transition">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Cadastros</div>
+                <div id="kpi-total" class="text-3xl font-extrabold text-white mt-2">51</div>
+                <div class="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span> Registros no SGI
+                </div>
+            </div>
+
+            <div class="bg-[#131c2e] p-4 rounded-xl border border-slate-800 relative overflow-hidden shadow-sm hover:border-slate-700 transition">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Taxa de Membros</div>
+                <div id="kpi-membros" class="text-3xl font-extrabold text-emerald-400 mt-2">53%</div>
+                <div id="kpi-membros-sub" class="text-[11px] text-slate-500 mt-1">27 membros efetivos</div>
+            </div>
+
+            <div class="bg-[#131c2e] p-4 rounded-xl border border-slate-800 relative overflow-hidden shadow-sm hover:border-slate-700 transition">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Engajados em Função</div>
+                <div id="kpi-funcao" class="text-3xl font-extrabold text-amber-400 mt-2">20%</div>
+                <div id="kpi-funcao-sub" class="text-[11px] text-slate-500 mt-1">10 voluntários com escala</div>
+            </div>
+
+            <div class="bg-[#131c2e] p-4 rounded-xl border border-slate-800 relative overflow-hidden shadow-sm hover:border-slate-700 transition">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Engajamento EBD (Q3)</div>
+                <div id="kpi-ebd" class="text-3xl font-extrabold text-indigo-400 mt-2">39%</div>
+                <div id="kpi-ebd-sub" class="text-[11px] text-slate-500 mt-1">20 assíduos no trimestre</div>
+            </div>
+        </section>
+
+        <!-- CHARTS GRID CONTAINER -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- CHART 1: Pessoas × Dias sem Visita -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> Pessoas × Dias sem Visita
+                        </h3>
+                        <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded">Clique na barra p/ filtrar pessoa</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Total de dias transcorridos desde a última visita pastoral/membro no SGI</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartDiasSemVisita"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 2: Quantidade de EBD por Pessoa no último trimestre -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-400"></i> Quantidade de EBD por Pessoa (Último Trimestre)
+                        </h3>
+                        <span class="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded">Clique na barra p/ filtrar</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Presenças contabilizadas nas 12 reuniões da EBD no 3º trimestre</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartEbdPessoa"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 3: Categorias × Situação -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-sky-400"></i> Categorias × Situação
+                        </h3>
+                        <span class="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded">Clique na barra p/ filtrar</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Distribuição de membros e visitantes agrupados por faixa etária/categoria</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartCategoriaSituacao"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 4: Situação × Batismo -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-water text-emerald-400"></i> Situação × Batismo
+                        </h3>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Clique p/ filtrar status</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Proporção de pessoas batizadas por tipo de situação cadastral</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartSituacaoBatismo"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 5: Distribuição de Pessoas por Sexo -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-venus-mars text-rose-400"></i> Distribuição de Pessoas por Sexo
+                        </h3>
+                        <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded">Clique na fatia p/ filtrar</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Proporção e quantitativo absoluto entre público masculino e feminino</p>
+                </div>
+                <div class="relative min-h-[300px] w-full flex items-center justify-center">
+                    <canvas id="chartSexo"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 6: Pirâmide Etária por Pessoa -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-emerald-400"></i> Pirâmide Etária por Pessoa
+                        </h3>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Totais visíveis nos dados</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Distribuição do grupo categorizado por idades e gênero (Clique p/ filtrar faixa etária)</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartPiramideEtaria"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 7: Aniversariantes por Mês -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-cake-candles text-sky-400"></i> Aniversariantes por Mês
+                        </h3>
+                        <span class="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded">Clique no mês p/ filtrar</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Mapeamento dos aniversários ao longo dos 12 meses do ano</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartAniversariantes"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 8: Pessoas × Último Seminário -->
+            <div class="bg-[#131c2e] p-5 rounded-xl border border-slate-800 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-book-bookmark text-teal-400"></i> Pessoas × Último Seminário
+                        </h3>
+                        <span class="text-[10px] bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded">Clique no ano p/ filtrar</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Distribuição do público pelo ano de participação no último seminário oficial</p>
+                </div>
+                <div class="relative min-h-[300px] w-full">
+                    <canvas id="chartUltimoSeminario"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- DETAILED DATA TABLE -->
+        <section class="bg-[#131c2e] rounded-xl border border-slate-800 shadow-md overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-table-list text-slate-400"></i> Registros Selecionados
+                </h3>
+                <div class="flex items-center gap-3">
+                    <span id="table-count" class="text-xs text-slate-400">Exibindo 51 registros</span>
+                    <button id="export-csv-btn" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded border border-slate-700 flex items-center gap-1 transition">
+                        <i class="fa-solid fa-download text-sky-400"></i> Exportar CSV
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-[#1a2336] text-slate-400 uppercase text-[10px] tracking-wider">
+                        <tr>
+                            <th class="p-3 sort-header" data-sort="name">Nome <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 sort-header" data-sort="cat">Categoria <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 sort-header" data-sort="sit">Situação <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-center sort-header" data-sort="freq">Frequenta <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-right sort-header" data-sort="daysNoVisit">Dias s/ Visita <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-center sort-header" data-sort="ebdQ3">EBD (Q3) <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-center sort-header" data-sort="func">Tem Função <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-center sort-header" data-sort="batismo">Batizado <i class="fa-solid fa-sort ml-1"></i></th>
+                            <th class="p-3 text-center sort-header" data-sort="sem">Último Seminário <i class="fa-solid fa-sort ml-1"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-800/60 font-mono">
+                        <!-- Table rows populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const rawData = [
+            { name: "ALDA MARCIA F. M. LEITÃO", cat: "Adulto", sit: "Visitante", sex: "F", birth: "02/03/1965", daysNoVisit: 401, func: "Não", batismo: "Não", sem: "11/03/2023", freq: "às vezes", ebdQ3: 0 },
+            { name: "ALEXANDRE CRESPO MESQUITA", cat: "Adulto", sit: "Visitante", sex: "M", birth: "08/10/1981", daysNoVisit: 3529, func: "Não", batismo: "Não", sem: "25/11/2017", freq: "às vezes", ebdQ3: 0 },
+            { name: "ALVARO C. A. RODRIGUES", cat: "Adulto", sit: "Visitante", sex: "M", birth: "06/03/1992", daysNoVisit: 797, func: "Sim", batismo: "Sim", sem: "20/09/2024", freq: "Não", ebdQ3: 0 },
+            { name: "AMANDA PEREIRA DE FREITAS", cat: "Jovem", sit: "Visitante", sex: "F", birth: "19/10/2004", daysNoVisit: 3716, func: "Não", batismo: "Sim", sem: "21/04/2023", freq: "Não", ebdQ3: 0 },
+            { name: "ANA PAULA C. A. RODRIGUES", cat: "Adulto", sit: "Membro", sex: "F", birth: "08/09/1965", daysNoVisit: 781, func: "Sim", batismo: "Sim", sem: "19/08/2023", freq: "Sim", ebdQ3: 8 },
+            { name: "ANTONIO MARCOS SOUZA MAIA", cat: "Adulto", sit: "Visitante Frequente", sex: "M", birth: "15/07/1976", daysNoVisit: 56, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Sim", ebdQ3: 1 },
+            { name: "AUGUSTO NEVES FRANCO", cat: "Criança (Intermediário)", sit: "Membro não batizado", sex: "M", birth: "19/05/2018", daysNoVisit: 2835, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Sim", ebdQ3: 0 },
+            { name: "BENILTON BARRETO DE AZEREDO", cat: "Adulto", sit: "Membro", sex: "M", birth: "22/12/1992", daysNoVisit: 65, func: "Não", batismo: "Sim", sem: "25/03/2023", freq: "Sim", ebdQ3: 7 },
+            { name: "BERNADETE LORDELLO MELLO", cat: "Adulto", sit: "Membro", sex: "F", birth: "29/05/1963", daysNoVisit: 57, func: "Sim", batismo: "Sim", sem: "08/08/2025", freq: "Sim", ebdQ3: 10 },
+            { name: "CARLA DE SOUSA SILVA SILVA", cat: "Adulto", sit: "Membro", sex: "F", birth: "26/05/1982", daysNoVisit: 799, func: "Não", batismo: "Sim", sem: "06/09/2025", freq: "às vezes", ebdQ3: 0 },
+            { name: "CARLOS ALBERTO R. SILVA", cat: "Adulto", sit: "Membro", sex: "M", birth: "10/08/1962", daysNoVisit: 176, func: "Sim", batismo: "Sim", sem: "19/08/2023", freq: "Sim", ebdQ3: 6 },
+            { name: "DIANA DA SILVEIRA PESSANHA", cat: "Adulto", sit: "Visitante", sex: "F", birth: "03/04/1984", daysNoVisit: 3528, func: "Não", batismo: "Não", sem: "25/11/2017", freq: "às vezes", ebdQ3: 0 },
+            { name: "ESTER MENDES SOARES", cat: "Jovem", sit: "Membro", sex: "F", birth: "29/03/2006", daysNoVisit: 74, func: "Não", batismo: "Sim", sem: "06/09/2025", freq: "Sim", ebdQ3: 8 },
+            { name: "GABRIELA SILVEIRA P. MESQUITA", cat: "Adolescente", sit: "Visitante", sex: "F", birth: "21/08/2011", daysNoVisit: 1317, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "às vezes", ebdQ3: 0 },
+            { name: "GEDISON DE SOUZA GOMES ALVES", cat: "Adulto", sit: "Membro", sex: "M", birth: "01/02/1979", daysNoVisit: 791, func: "Não", batismo: "Sim", sem: "29/08/2020", freq: "Sim", ebdQ3: 8 },
+            { name: "GISELY DA COSTA ABREU RANGEL", cat: "Adulto", sit: "Visitante", sex: "F", birth: "28/11/1971", daysNoVisit: 382, func: "Não", batismo: "Sim", sem: "05/06/2021", freq: "Sim", ebdQ3: 0 },
+            { name: "GLAYDON CANDIDO SIQUEIRA", cat: "Adulto", sit: "Membro", sex: "M", birth: "11/06/1972", daysNoVisit: 10, func: "Não", batismo: "Sim", sem: "03/08/2024", freq: "Não", ebdQ3: 1 },
+            { name: "HEITOR ABREU RANGEL", cat: "Jovem", sit: "Membro", sex: "M", birth: "20/01/2004", daysNoVisit: 18, func: "Sim", batismo: "Sim", sem: "20/09/2024", freq: "Sim", ebdQ3: 1 },
+            { name: "IVAN DE SOUSA SILVA", cat: "Jovem", sit: "Membro", sex: "M", birth: "27/01/2001", daysNoVisit: 74, func: "Sim", batismo: "Sim", sem: "06/09/2025", freq: "Sim", ebdQ3: 9 },
+            { name: "JANCARLOS AZEREDO DAMASCENO", cat: "Adulto", sit: "Membro", sex: "M", birth: "05/12/1999", daysNoVisit: 4369, func: "Não", batismo: "Sim", sem: "26/08/2022", freq: "Sim", ebdQ3: 1 },
+            { name: "JOÃO VICTOR GOMES MARTINS", cat: "Jovem", sit: "Visitante", sex: "M", birth: "08/12/1995", daysNoVisit: 3278, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "JOSÉ RICARDO NETO LOBO", cat: "Adulto", sit: "Visitante", sex: "M", birth: "26/03/1955", daysNoVisit: 3831, func: "Não", batismo: "Sim", sem: "19/08/2020", freq: "às vezes", ebdQ3: 0 },
+            { name: "LEILIAN COSTA P. SIQUEIRA", cat: "Adulto", sit: "Membro", sex: "F", birth: "16/08/1974", daysNoVisit: 10, func: "Não", batismo: "Sim", sem: "25/07/2026", freq: "Sim", ebdQ3: 2 },
+            { name: "LUCIANA TAVARES MORAIS", cat: "Adulto", sit: "Visitante", sex: "F", birth: "02/01/1978", daysNoVisit: 2634, func: "Não", batismo: "Sim", sem: "20/11/2004", freq: "Não", ebdQ3: 0 },
+            { name: "LUCIMAR LUCIANO DOS SANTOS", cat: "Adulto", sit: "Visitante Frequente", sex: "F", birth: "15/09/1963", daysNoVisit: 64, func: "Sim", batismo: "Não", sem: "Sem Registro", freq: "Sim", ebdQ3: 2 },
+            { name: "LUIZ FERNANDO PAES TEIXEIRA", cat: "Jovem", sit: "Visitante", sex: "M", birth: "01/08/2006", daysNoVisit: 801, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "LUIZA BEATRIZ G. PAULA", cat: "Adulto", sit: "Membro", sex: "F", birth: "16/01/1996", daysNoVisit: 86, func: "Sim", batismo: "Sim", sem: "03/04/2026", freq: "Sim", ebdQ3: 5 },
+            { name: "MARA REGINA DA CRUZ", cat: "Adulto", sit: "Visitante", sex: "F", birth: "14/03/1958", daysNoVisit: 3715, func: "Não", batismo: "Sim", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "MARIA S. A. MACIEL", cat: "Adulto", sit: "Membro", sex: "F", birth: "24/06/1976", daysNoVisit: 359, func: "Não", batismo: "Sim", sem: "29/08/2020", freq: "às vezes", ebdQ3: 1 },
+            { name: "MARINETE VICHI GOMES", cat: "Adulto", sit: "Visitante", sex: "F", birth: "01/03/1960", daysNoVisit: 4419, func: "Não", batismo: "Sim", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "MARLI BERNARDO", cat: "Adulto", sit: "Membro", sex: "F", birth: "15/02/1950", daysNoVisit: 559, func: "Não", batismo: "Sim", sem: "22/03/2025", freq: "Sim", ebdQ3: 3 },
+            { name: "MATEUS SIQUEIRA", cat: "Jovem", sit: "Membro", sex: "M", birth: "09/06/2005", daysNoVisit: 10, func: "Não", batismo: "Sim", sem: "25/07/2026", freq: "Sim", ebdQ3: 1 },
+            { name: "MICHELLE FARIA CABRAL", cat: "Adulto", sit: "Membro", sex: "F", birth: "04/09/1995", daysNoVisit: 200, func: "Sim", batismo: "Sim", sem: "03/04/2026", freq: "Sim", ebdQ3: 10 },
+            { name: "PEDRO AUGUSTO S. C. BRANDAO", cat: "Adulto", sit: "Membro", sex: "M", birth: "01/01/1991", daysNoVisit: 86, func: "Sim", batismo: "Sim", sem: "03/04/2026", freq: "Sim", ebdQ3: 12 },
+            { name: "RAFAEL DOS SANTOS JORGE", cat: "Jovem", sit: "Membro", sex: "M", birth: "19/07/1981", daysNoVisit: 39, func: "Sim", batismo: "Sim", sem: "03/04/2026", freq: "Sim", ebdQ3: 12 },
+            { name: "RAISA BARBARA POSSOLE GOMES", cat: "Adulto", sit: "Visitante", sex: "F", birth: "29/07/1991", daysNoVisit: 797, func: "Não", batismo: "Não", sem: "20/09/2024", freq: "Não", ebdQ3: 0 },
+            { name: "RAPHAELA MAIA NEVES", cat: "Adolescente", sit: "Membro não batizado", sex: "F", birth: "27/04/2013", daysNoVisit: 56, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Sim", ebdQ3: 5 },
+            { name: "REBECA CARDOSO T. AZEREDO", cat: "Criança (Pequeno) 3-7", sit: "Membro não batizado", sex: "F", birth: "20/06/2023", daysNoVisit: 65, func: "Não", batismo: "Não", sem: "Sem Registro", freq: "Sim", ebdQ3: 7 },
+            { name: "REGIS VILELA", cat: "Adulto", sit: "Visitante", sex: "M", birth: "21/11/1972", daysNoVisit: 3528, func: "Não", batismo: "Sim", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "RENA FIRMES MAIA NEVES", cat: "Adulto", sit: "Membro", sex: "F", birth: "17/07/1957", daysNoVisit: 5563, func: "Não", batismo: "Sim", sem: "20/06/2026", freq: "Sim", ebdQ3: 0 },
+            { name: "SAMIRA DE SOUSA SILVA", cat: "Jovem", sit: "Visitante", sex: "F", birth: "02/04/2005", daysNoVisit: 799, func: "Não", batismo: "Não", sem: "21/04/2023", freq: "Não", ebdQ3: 0 },
+            { name: "SERGIO DA SILVA SOUZA", cat: "Adulto", sit: "Membro", sex: "M", birth: "11/11/1973", daysNoVisit: 799, func: "Não", batismo: "Sim", sem: "06/09/2025", freq: "às vezes", ebdQ3: 1 },
+            { name: "SIDNEY RANGEL DE FREITAS", cat: "Adulto", sit: "Visitante", sex: "M", birth: "06/04/1966", daysNoVisit: 3716, func: "Não", batismo: "Não", sem: "10/01/2004", freq: "Não", ebdQ3: 0 },
+            { name: "SIRLEY PEREIRA CALDEIRA", cat: "Adulto", sit: "Membro", sex: "F", birth: "08/03/1949", daysNoVisit: 424, func: "Não", batismo: "Sim", sem: "Sem Registro", freq: "Sim", ebdQ3: 4 },
+            { name: "SUELI BRITO GOMES", cat: "Adulto", sit: "Membro", sex: "F", birth: "28/01/1957", daysNoVisit: 1290, func: "Não", batismo: "Sim", sem: "Sem Registro", freq: "Não", ebdQ3: 0 },
+            { name: "SUSANE CARDOSO S. TOUGUINHÓ", cat: "Adulto", sit: "Membro", sex: "F", birth: "20/06/1993", daysNoVisit: 7, func: "Não", batismo: "Sim", sem: "05/06/2021", freq: "Sim", ebdQ3: 7 },
+            { name: "TATIANY MARIANO T. AMORIM", cat: "Adulto", sit: "Visitante", sex: "F", birth: "30/09/1973", daysNoVisit: 1809, func: "Não", batismo: "Sim", sem: "24/09/2022", freq: "Não", ebdQ3: 0 },
+            { name: "THAMIRIS MIRANDA SOARES GOMES", cat: "Adulto", sit: "Membro", sex: "F", birth: "03/06/2002", daysNoVisit: 3598, func: "Não", batismo: "Sim", sem: "26/08/2022", freq: "Sim", ebdQ3: 1 },
+            { name: "VICTOR DA SILVA RODRIGUES", cat: "Adulto", sit: "Membro", sex: "M", birth: "19/02/1992", daysNoVisit: 200, func: "Sim", batismo: "Sim", sem: "03/04/2026", freq: "Sim", ebdQ3: 10 },
+            { name: "VIVIAN MAIA NEVES", cat: "Adulto", sit: "Membro", sex: "F", birth: "10/07/1981", daysNoVisit: 72, func: "Não", batismo: "Sim", sem: "09/10/2004", freq: "Sim", ebdQ3: 5 },
+            { name: "VIVIANE FERREIRA P. FREITAS", cat: "Adulto", sit: "Visitante Frequente", sex: "F", birth: "28/05/1979", daysNoVisit: 3716, func: "Não", batismo: "Sim", sem: "10/01/2004", freq: "Não", ebdQ3: 0 }
+        ];
+
+        Chart.register(ChartDataLabels);
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
+
+        // Global Interactive Chart State
+        let chartFilter = { type: null, value: null, label: '' };
+        let sortColumn = 'name';
+        let sortAsc = true;
+
+        // Chart instances
+        let chartDiasSemVisitaInstance = null;
+        let chartEbdPessoaInstance = null;
+        let chartCategoriaSituacaoInstance = null;
+        let chartSituacaoBatismoInstance = null;
+        let chartSexoInstance = null;
+        let chartPiramideEtariaInstance = null;
+        let chartAniversariantesInstance = null;
+        let chartUltimoSeminarioInstance = null;
+
+        function initFilterOptions() {
+            const catSelect = document.getElementById('filter-categoria');
+            const sitSelect = document.getElementById('filter-situacao');
+            const freqSelect = document.getElementById('filter-frequenta');
+
+            const categories = [...new Set(rawData.map(d => d.cat))].sort();
+            const situacoes = [...new Set(rawData.map(d => d.sit))].sort();
+            const frequencias = [...new Set(rawData.map(d => d.freq))].sort();
+
+            categories.forEach(c => catSelect.add(new Option(c, c)));
+            situacoes.forEach(s => sitSelect.add(new Option(s, s)));
+            frequencias.forEach(f => freqSelect.add(new Option(f, f)));
+        }
+
+        function getAgeGroup(birthDateStr) {
+            const year = parseInt(birthDateStr.split('/')[2]);
+            const age = 2026 - year;
+            if (age <= 12) return '0-12 yrs';
+            if (age <= 17) return '13-17 yrs';
+            if (age <= 29) return '18-29 yrs';
+            if (age <= 49) return '30-49 yrs';
+            if (age <= 64) return '50-64 yrs';
+            return '65+ yrs';
+        }
+
+        function applyChartFilter(type, value, label) {
+            chartFilter = { type, value, label };
+            const banner = document.getElementById('active-filter-banner');
+            const textEl = document.getElementById('active-filter-text');
+            if (type && value) {
+                textEl.textContent = `${type}: ${label || value}`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+            updateDashboard();
+        }
+
+        function clearChartFilter() {
+            chartFilter = { type: null, value: null, label: '' };
+            document.getElementById('active-filter-banner').classList.add('hidden');
+            updateDashboard();
+        }
+
+        function getFilteredData() {
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const cat = document.getElementById('filter-categoria').value;
+            const sit = document.getElementById('filter-situacao').value;
+            const freq = document.getElementById('filter-frequenta').value;
+            const func = document.getElementById('filter-funcao').value;
+            const batismo = document.getElementById('filter-batizado').value;
+            const seminario = document.getElementById('filter-seminario').value;
+            const semVisita = document.getElementById('filter-semvisita').value;
+
+            return rawData.filter(d => {
+                const matchSearch = !search || d.name.toLowerCase().includes(search);
+                const matchCat = cat === 'Todos' || d.cat === cat;
+                const matchSit = sit === 'Todos' || d.sit === sit;
+                const matchFreq = freq === 'Todos' || d.freq === freq;
+                const matchFunc = func === 'Todos' || d.func === func;
+                const matchBatismo = batismo === 'Todos' || d.batismo === batismo;
+
+                // Seminario Filter
+                let matchSeminario = true;
+                if (seminario !== 'Todos') {
+                    const semStr = d.sem || '';
+                    if (seminario === 'Sem Registro') {
+                        matchSeminario = !semStr || semStr === 'Sem Registro' || semStr === '0';
+                    } else {
+                        const year = semStr.includes('/') ? parseInt(semStr.split('/')[2]) : 0;
+                        if (seminario === 'Antes de 2022') {
+                            matchSeminario = year > 0 && year < 2022;
+                        } else {
+                            matchSeminario = year === parseInt(seminario);
+                        }
+                    }
+                }
+
+                // Sem Visita Filter
+                let matchSemVisita = true;
+                if (semVisita !== 'Todos') {
+                    const days = d.daysNoVisit || 0;
+                    if (semVisita === 'Até 1 ano') matchSemVisita = days <= 365;
+                    else if (semVisita === '1 a 3 anos') matchSemVisita = days > 365 && days <= 1095;
+                    else if (semVisita === '3 a 5 anos') matchSemVisita = days > 1095 && days <= 1825;
+                    else if (semVisita === 'Mais de 5 anos') matchSemVisita = days > 1825;
+                }
+
+                // Interactive Chart Cross-Filter
+                let matchChart = true;
+                if (chartFilter.type) {
+                    if (chartFilter.type === 'Sexo') {
+                        matchChart = d.sex === chartFilter.value;
+                    } else if (chartFilter.type === 'Faixa Etária') {
+                        matchChart = getAgeGroup(d.birth) === chartFilter.value;
+                    } else if (chartFilter.type === 'Mês de Aniversário') {
+                        const m = parseInt(d.birth.split('/')[1]) - 1;
+                        matchChart = m === chartFilter.value;
+                    } else if (chartFilter.type === 'Categoria') {
+                        matchChart = d.cat === chartFilter.value;
+                    } else if (chartFilter.type === 'Situação') {
+                        matchChart = d.sit === chartFilter.value;
+                    } else if (chartFilter.type === 'Batismo') {
+                        matchChart = d.batismo === chartFilter.value;
+                    } else if (chartFilter.type === 'Seminário') {
+                        if (chartFilter.value === 'Sem Registro / Nunca') {
+                            matchChart = !d.sem || d.sem === '0' || d.sem === 'Sem Registro';
+                        } else {
+                            const y = d.sem && d.sem.includes('/') ? parseInt(d.sem.split('/')[2]) : 0;
+                            if (chartFilter.value === '2026') matchChart = y === 2026;
+                            else if (chartFilter.value === '2025') matchChart = y === 2025;
+                            else if (chartFilter.value === '2024') matchChart = y === 2024;
+                            else if (chartFilter.value === '2022 - 2023') matchChart = y >= 2022 && y <= 2023;
+                            else if (chartFilter.value === 'Antes de 2022') matchChart = y > 0 && y < 2022;
+                        }
+                    }
+                }
+
+                return matchSearch && matchCat && matchSit && matchFreq && matchFunc && matchBatismo && matchSeminario && matchSemVisita && matchChart;
+            });
+        }
+
+        function updateKPIs(data) {
+            const total = data.length;
+            document.getElementById('kpi-total').textContent = total;
+            document.getElementById('filtered-count-badge').textContent = total;
+
+            const membrosCount = data.filter(d => d.sit.toLowerCase().includes('membro') && !d.sit.toLowerCase().includes('não batizado')).length;
+            const membrosPct = total > 0 ? Math.round((membrosCount / total) * 100) : 0;
+            document.getElementById('kpi-membros').textContent = `${membrosPct}%`;
+            document.getElementById('kpi-membros-sub').textContent = `${membrosCount} membros efetivos`;
+
+            const funcaoCount = data.filter(d => d.func === 'Sim').length;
+            const funcaoPct = total > 0 ? Math.round((funcaoCount / total) * 100) : 0;
+            document.getElementById('kpi-funcao').textContent = `${funcaoPct}%`;
+            document.getElementById('kpi-funcao-sub').textContent = `${funcaoCount} voluntários com função`;
+
+            const ebdCount = data.filter(d => d.ebdQ3 > 0).length;
+            const ebdPct = total > 0 ? Math.round((ebdCount / total) * 100) : 0;
+            document.getElementById('kpi-ebd').textContent = `${ebdPct}%`;
+            document.getElementById('kpi-ebd-sub').textContent = `${ebdCount} assíduos no trimestre`;
+        }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('table-body');
+            const countLabel = document.getElementById('table-count');
+            tbody.innerHTML = '';
+            countLabel.textContent = `Exibindo ${data.length} de ${rawData.length} registros`;
+
+            // Sort data
+            const sortedData = [...data].sort((a, b) => {
+                let valA = a[sortColumn];
+                let valB = b[sortColumn];
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            sortedData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/60 transition-colors cursor-pointer';
+                tr.title = `Clique para filtrar apenas ${item.name}`;
+                tr.onclick = () => {
+                    document.getElementById('search-input').value = item.name;
+                    updateDashboard();
+                };
+                
+                const funcBadge = item.func === 'Sim' 
+                    ? `<span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded text-[10px] border border-amber-500/20 font-semibold">Sim</span>`
+                    : `<span class="text-slate-500">Não</span>`;
+
+                const batismoBadge = item.batismo === 'Sim'
+                    ? `<span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] border border-emerald-500/20 font-semibold">Sim</span>`
+                    : `<span class="text-slate-500">Não</span>`;
+
+                let freqBadge = `<span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] border border-emerald-500/20 font-semibold">Sim</span>`;
+                if (item.freq === 'às vezes') {
+                    freqBadge = `<span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded text-[10px] border border-amber-500/20 font-semibold">Às vezes</span>`;
+                } else if (item.freq === 'Não') {
+                    freqBadge = `<span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded text-[10px] border border-rose-500/20 font-semibold">Não</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-200">${item.name}</td>
+                    <td class="p-3 text-slate-400">${item.cat}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${item.sit === 'Membro' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20 font-semibold' : 'bg-slate-800 text-slate-400'}">${item.sit}</span></td>
+                    <td class="p-3 text-center">${freqBadge}</td>
+                    <td class="p-3 text-right font-bold text-amber-400">${item.daysNoVisit.toLocaleString('pt-BR')}</td>
+                    <td class="p-3 text-center font-bold text-indigo-400">${item.ebdQ3}</td>
+                    <td class="p-3 text-center">${funcBadge}</td>
+                    <td class="p-3 text-center">${batismoBadge}</td>
+                    <td class="p-3 text-center text-slate-400">${item.sem}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderChartDiasSemVisita(data) {
+            const ctx = document.getElementById('chartDiasSemVisita').getContext('2d');
+            const sorted = [...data].sort((a, b) => b.daysNoVisit - a.daysNoVisit).slice(0, 12);
+            const labels = sorted.map(d => d.name.length > 18 ? d.name.substring(0, 16) + '...' : d.name);
+            const fullNames = sorted.map(d => d.name);
+            const values = sorted.map(d => d.daysNoVisit);
+
+            if (chartDiasSemVisitaInstance) chartDiasSemVisitaInstance.destroy();
+
+            chartDiasSemVisitaInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Dias Sem Visita',
+                        data: values,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            document.getElementById('search-input').value = fullNames[idx];
+                            updateDashboard();
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw.toLocaleString('pt-BR')} dias sem visita (Clique p/ pesquisar)`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#f8fafc',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => `${val.toLocaleString('pt-BR')} d`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#cbd5e1', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartEbdPessoa(data) {
+            const ctx = document.getElementById('chartEbdPessoa').getContext('2d');
+            const sorted = [...data].filter(d => d.ebdQ3 > 0).sort((a, b) => b.ebdQ3 - a.ebdQ3).slice(0, 12);
+            const labels = sorted.map(d => d.name.length > 18 ? d.name.substring(0, 16) + '...' : d.name);
+            const fullNames = sorted.map(d => d.name);
+            const values = sorted.map(d => d.ebdQ3);
+
+            if (chartEbdPessoaInstance) chartEbdPessoaInstance.destroy();
+
+            chartEbdPessoaInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['Nenhum registro'],
+                    datasets: [{
+                        label: 'Presenças na EBD',
+                        data: values.length ? values : [0],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0 && fullNames.length > 0) {
+                            const idx = elements[0].index;
+                            document.getElementById('search-input').value = fullNames[idx];
+                            updateDashboard();
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw} presenças em 12 aulas`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#e0e7ff',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => `${val} pres.`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            max: 12,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', stepSize: 2 }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#cbd5e1', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartCategoriaSituacao(data) {
+            const ctx = document.getElementById('chartCategoriaSituacao').getContext('2d');
+            
+            const categories = [...new Set(rawData.map(d => d.cat))].sort();
+            const situacoes = [...new Set(rawData.map(d => d.sit))].sort();
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
+
+            const datasets = situacoes.map((sit, idx) => {
+                const counts = categories.map(cat => {
+                    return data.filter(d => d.cat === cat && d.sit === sit).length;
+                });
+                return {
+                    label: sit,
+                    data: counts,
+                    backgroundColor: colors[idx % colors.length],
+                    borderRadius: 4
+                };
+            });
+
+            if (chartCategoriaSituacaoInstance) chartCategoriaSituacaoInstance.destroy();
+
+            chartCategoriaSituacaoInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const catIdx = elements[0].index;
+                            const selectedCat = categories[catIdx];
+                            applyChartFilter('Categoria', selectedCat, selectedCat);
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#e2e8f0', font: { size: 10 } }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#cbd5e1',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (val) => val > 0 ? val : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#cbd5e1', font: { size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartSituacaoBatismo(data) {
+            const ctx = document.getElementById('chartSituacaoBatismo').getContext('2d');
+            
+            const situacoes = [...new Set(rawData.map(d => d.sit))].sort();
+            const batismoSim = situacoes.map(sit => data.filter(d => d.sit === sit && d.batismo === 'Sim').length);
+            const batismoNao = situacoes.map(sit => data.filter(d => d.sit === sit && d.batismo === 'Não').length);
+
+            if (chartSituacaoBatismoInstance) chartSituacaoBatismoInstance.destroy();
+
+            chartSituacaoBatismoInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: situacoes,
+                    datasets: [
+                        {
+                            label: 'Batizado (Sim)',
+                            data: batismoSim,
+                            backgroundColor: '#10b981',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Não Batizado (Não)',
+                            data: batismoNao,
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const sitIdx = elements[0].index;
+                            const datasetIdx = elements[0].datasetIndex;
+                            const selectedSit = situacoes[sitIdx];
+                            const batStatus = datasetIdx === 0 ? 'Sim' : 'Não';
+                            applyChartFilter('Situação', selectedSit, `${selectedSit} (${batStatus === 'Sim' ? 'Batizado' : 'Não Batizado'})`);
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#e2e8f0', font: { size: 10 } }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#cbd5e1',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (val) => val > 0 ? val : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#cbd5e1', font: { size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartSexo(data) {
+            const ctx = document.getElementById('chartSexo').getContext('2d');
+            const masc = data.filter(d => d.sex === 'M').length;
+            const fem = data.filter(d => d.sex === 'F').length;
+
+            if (chartSexoInstance) chartSexoInstance.destroy();
+
+            chartSexoInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Feminino', 'Masculino'],
+                    datasets: [{
+                        data: [fem, masc],
+                        backgroundColor: ['#f43f5e', '#3b82f6'],
+                        borderColor: '#131c2e',
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            const sexVal = idx === 0 ? 'F' : 'M';
+                            const labelStr = idx === 0 ? 'Feminino' : 'Masculino';
+                            applyChartFilter('Sexo', sexVal, labelStr);
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#e2e8f0', font: { size: 11 }, padding: 15 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.label}: ${ctx.raw} pessoas (${Math.round((ctx.raw / (fem + masc || 1)) * 100)}%)`
+                            }
+                        },
+                        datalabels: {
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 12 },
+                            formatter: (value) => {
+                                if (value === 0) return '';
+                                const total = fem + masc;
+                                const pct = Math.round((value / total) * 100);
+                                return `${value} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartPiramideEtaria(data) {
+            const ctx = document.getElementById('chartPiramideEtaria').getContext('2d');
+            const ageBrackets = ['0-12 yrs', '13-17 yrs', '18-29 yrs', '30-49 yrs', '50-64 yrs', '65+ yrs'];
+            const maleCounts = [0, 0, 0, 0, 0, 0];
+            const femaleCounts = [0, 0, 0, 0, 0, 0];
+
+            data.forEach(d => {
+                const ageGrp = getAgeGroup(d.birth);
+                const index = ageBrackets.indexOf(ageGrp);
+                if (index !== -1) {
+                    if (d.sex === 'M') maleCounts[index]++;
+                    else femaleCounts[index]++;
+                }
+            });
+
+            const totalsPerBracket = ageBrackets.map((_, i) => maleCounts[i] + femaleCounts[i]);
+
+            if (chartPiramideEtariaInstance) chartPiramideEtariaInstance.destroy();
+
+            chartPiramideEtariaInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ageBrackets,
+                    datasets: [
+                        {
+                            label: 'Masculino',
+                            data: maleCounts,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4,
+                            barThickness: 14
+                        },
+                        {
+                            label: 'Feminino',
+                            data: femaleCounts,
+                            backgroundColor: '#f43f5e',
+                            borderRadius: 4,
+                            barThickness: 14
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const bracketIdx = elements[0].index;
+                            const selectedBracket = ageBrackets[bracketIdx];
+                            applyChartFilter('Faixa Etária', selectedBracket, `${selectedBracket} (${totalsPerBracket[bracketIdx]} pessoas)`);
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { color: '#e2e8f0', font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: (items) => {
+                                    if (!items.length) return '';
+                                    const idx = items[0].dataIndex;
+                                    return `Total na Faixa: ${totalsPerBracket[idx]} pessoas`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#cbd5e1',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (val) => val > 0 ? val : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#cbd5e1', font: { size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartAniversariantes(data) {
+            const ctx = document.getElementById('chartAniversariantes').getContext('2d');
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const counts = new Array(12).fill(0);
+
+            data.forEach(d => {
+                const monthIdx = parseInt(d.birth.split('/')[1]) - 1;
+                if (monthIdx >= 0 && monthIdx < 12) {
+                    counts[monthIdx]++;
+                }
+            });
+
+            if (chartAniversariantesInstance) chartAniversariantesInstance.destroy();
+
+            chartAniversariantesInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Aniversariantes',
+                        data: counts,
+                        backgroundColor: '#38bdf8',
+                        borderRadius: 6,
+                        barThickness: 14
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const monthIdx = elements[0].index;
+                            applyChartFilter('Mês de Aniversário', monthIdx, months[monthIdx]);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw} aniversariantes em ${ctx.label}`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#e0f2fe',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => val > 0 ? val : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartUltimoSeminario(data) {
+            const ctx = document.getElementById('chartUltimoSeminario').getContext('2d');
+
+            const semCategories = {
+                '2026': 0,
+                '2025': 0,
+                '2024': 0,
+                '2022 - 2023': 0,
+                'Antes de 2022': 0,
+                'Sem Registro / Nunca': 0
+            };
+
+            data.forEach(d => {
+                if (!d.sem || d.sem === '0' || d.sem === 'Sem Registro') {
+                    semCategories['Sem Registro / Nunca']++;
+                } else {
+                    const year = parseInt(d.sem.split('/')[2]);
+                    if (year === 2026) semCategories['2026']++;
+                    else if (year === 2025) semCategories['2025']++;
+                    else if (year === 2024) semCategories['2024']++;
+                    else if (year >= 2022) semCategories['2022 - 2023']++;
+                    else semCategories['Antes de 2022']++;
+                }
+            });
+
+            const labels = Object.keys(semCategories);
+            const values = Object.values(semCategories);
+
+            if (chartUltimoSeminarioInstance) chartUltimoSeminarioInstance.destroy();
+
+            chartUltimoSeminarioInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pessoas por Seminário',
+                        data: values,
+                        backgroundColor: ['#10b981', '#14b8a6', '#06b6d4', '#3b82f6', '#f59e0b', '#64748b'],
+                        borderRadius: 6,
+                        barThickness: 16
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            const semLabel = labels[idx];
+                            applyChartFilter('Seminário', semLabel, semLabel);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.raw} pessoas`
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'end',
+                            color: '#f8fafc',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (val) => `${val} p.`
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', stepSize: 2 }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#cbd5e1', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            const filtered = getFilteredData();
+            updateKPIs(filtered);
+            updateTable(filtered);
+            renderChartDiasSemVisita(filtered);
+            renderChartEbdPessoa(filtered);
+            renderChartCategoriaSituacao(filtered);
+            renderChartSituacaoBatismo(filtered);
+            renderChartSexo(filtered);
+            renderChartPiramideEtaria(filtered);
+            renderChartAniversariantes(filtered);
+            renderChartUltimoSeminario(filtered);
+        }
+
+        // CSV Export Feature
+        function exportToCSV() {
+            const data = getFilteredData();
+            if (!data.length) return;
+
+            const headers = ["Nome", "Categoria", "Situação", "Sexo", "Aniversário", "Dias sem Visita", "Tem Função", "Batizado", "Último Seminário", "Frequenta", "Presenças EBD (Q3)"];
+            const csvRows = [headers.join(',')];
+
+            data.forEach(d => {
+                const row = [
+                    `"${d.name}"`,
+                    `"${d.cat}"`,
+                    `"${d.sit}"`,
+                    `"${d.sex}"`,
+                    `"${d.birth}"`,
+                    d.daysNoVisit,
+                    `"${d.func}"`,
+                    `"${d.batismo}"`,
+                    `"${d.sem}"`,
+                    `"${d.freq}"`,
+                    d.ebdQ3
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `grupo_assistencia_filtrado_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        window.onload = function() {
+            initFilterOptions();
+
+            // Event Listeners for controls
+            document.getElementById('search-input').addEventListener('input', updateDashboard);
+            document.getElementById('filter-categoria').addEventListener('change', updateDashboard);
+            document.getElementById('filter-situacao').addEventListener('change', updateDashboard);
+            document.getElementById('filter-frequenta').addEventListener('change', updateDashboard);
+            document.getElementById('filter-funcao').addEventListener('change', updateDashboard);
+            document.getElementById('filter-batizado').addEventListener('change', updateDashboard);
+            document.getElementById('filter-seminario').addEventListener('change', updateDashboard);
+            document.getElementById('filter-semvisita').addEventListener('change', updateDashboard);
+
+            document.getElementById('clear-chart-filter-btn').addEventListener('click', clearChartFilter);
+
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                document.getElementById('search-input').value = '';
+                document.getElementById('filter-categoria').value = 'Todos';
+                document.getElementById('filter-situacao').value = 'Todos';
+                document.getElementById('filter-frequenta').value = 'Todos';
+                document.getElementById('filter-funcao').value = 'Todos';
+                document.getElementById('filter-batizado').value = 'Todos';
+                document.getElementById('filter-seminario').value = 'Todos';
+                document.getElementById('filter-semvisita').value = 'Todos';
+                clearChartFilter();
+            });
+
+            // Table Header Sorting Listeners
+            document.querySelectorAll('.sort-header').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.getAttribute('data-sort');
+                    if (sortColumn === col) {
+                        sortAsc = !sortAsc;
+                    } else {
+                        sortColumn = col;
+                        sortAsc = true;
+                    }
+                    updateDashboard();
+                });
+            });
+
+            // Export CSV listener
+            document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+
+            // Initial render
+            updateDashboard();
+        };
+    </script>
+</body>
+</html>
